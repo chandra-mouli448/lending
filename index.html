@@ -106,14 +106,19 @@
 
     async function connectWallet() {
       if (window.ethereum) {
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        contract = new ethers.Contract(contractAddress, contractABI, signer);
-        const account = await signer.getAddress();
-        document.getElementById("account").innerText = `Connected: ${account}`;
+        try {
+          provider = new ethers.providers.Web3Provider(window.ethereum);
+          await provider.send("eth_requestAccounts", []);
+          signer = provider.getSigner();
+          contract = new ethers.Contract(contractAddress, contractABI, signer);
+          const account = await signer.getAddress();
+          document.getElementById("account").innerText = `✅ Connected: ${account}`;
+        } catch (error) {
+          console.error(error);
+          alert("❌ User denied connection or error occurred.");
+        }
       } else {
-        alert("Please install MetaMask!");
+        alert("❗ Please install MetaMask!");
       }
     }
 
