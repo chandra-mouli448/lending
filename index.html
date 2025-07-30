@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credential Registry DApp</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', 'Roboto', sans-serif;
+      margin: 0;
+      padding: 30px;
+      background: linear-gradient(to right, #e0eafc, #cfdef3);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    .section {
+      background: white;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 500px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h4 {
+      margin-top: 0;
+      color: #007acc;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #007acc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+    #account, #verifyResult {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>Credential Registry DApp</h2>
+
+  <div class="section">
+    <h4>Connect Wallet</h4>
+    <button onclick="connectWallet()">Connect MetaMask</button>
+    <p id="account"></p>
+  </div>
+
+  <div class="section">
+    <h4>Issue Credential</h4>
+    <input type="text" id="issueWorker" placeholder="Worker address" />
+    <input type="text" id="issueCredHash" placeholder="Credential hash (bytes32)" />
+    <button onclick="issueCredential()">Issue Credential</button>
+  </div>
+
+  <div class="section">
+    <h4>Revoke Credential</h4>
+    <input type="text" id="revokeWorker" placeholder="Worker address" />
+    <input type="text" id="revokeCredHash" placeholder="Credential hash (bytes32)" />
+    <button onclick="revokeCredential()">Revoke Credential</button>
+  </div>
+
+  <div class="section">
+    <h4>Verify Credential</h4>
+    <input type="text" id="verifyWorker" placeholder="Worker address" />
+    <input type="text" id="verifyCredHash" placeholder="Credential hash (bytes32)" />
+    <button onclick="verifyCredential()">Verify Credential</button>
+    <p id="verifyResult"></p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
+  <script>
+    let provider;
+    let signer;
+    let contract;
+
+    const contractAddress = "0xD4Fc541236927E2EAf8F27606bD7309C1Fc2cbee";
+    const contractABI = [
+      {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"worker","type":"address"},{"indexed":false,"internalType":"bytes32","name":"credHash","type":"bytes32"}],"name":"CredentialIssued","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"worker","type":"address"},{"indexed":false,"internalType":"bytes32","name":"credHash","type":"bytes32"}],"name":"CredentialRevoked","type":"event"},
+      {"inputs":[{"internalType":"address","name":"worker","type":"address"},{"internalType":"bytes32","name":"credHash","type":"bytes32"}],"name":"issueCredential","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"worker","type":"address"},{"internalType":"bytes32","name":"credHash","type":"bytes32"}],"name":"revokeCredential","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"authority","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"credentials","outputs":[{"internalType":"bytes32","name":"hash","type":"bytes32"},{"internalType":"bool","name":"valid","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"isRevoked","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"worker","type":"address"},{"internalType":"bytes32","name":"credHash","type":"bytes32"}],"name":"verifyCredential","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}
+    ];
+
+    async function connectWallet() {
+      if (window.ethereum) {
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        contract = new ethers.Contract(contractAddress, contractABI, signer);
+        const account = await signer.getAddress();
+        document.getElementById("account").innerText = `Connected: ${account}`;
+      } else {
+        alert("Please install MetaMask!");
+      }
+    }
+
+    async function issueCredential() {
+      const worker = document.getElementById("issueWorker").value;
+      const credHash = document.getElementById("issueCredHash").value;
+      try {
+        const tx = await contract.issueCredential(worker, credHash);
+        await tx.wait();
+        alert("✅ Credential issued successfully!");
+      } catch (err) {
+        console.error(err);
+        alert("❌ Failed to issue credential.");
+      }
+    }
+
+    async function revokeCredential() {
+      const worker = document.getElementById("revokeWorker").value;
+      const credHash = document.getElementById("revokeCredHash").value;
+      try {
+        const tx = await contract.revokeCredential(worker, credHash);
+        await tx.wait();
+        alert("✅ Credential revoked successfully!");
+      } catch (err) {
+        console.error(err);
+        alert("❌ Failed to revoke credential.");
+      }
+    }
+
+    async function verifyCredential() {
+      const worker = document.getElementById("verifyWorker").value;
+      const credHash = document.getElementById("verifyCredHash").value;
+      try {
+        const result = await contract.verifyCredential(worker, credHash);
+        document.getElementById("verifyResult").innerText = result ? "✅ Credential is valid!" : "❌ Credential is invalid or revoked.";
+      } catch (err) {
+        console.error(err);
+        alert("❌ Failed to verify credential.");
+      }
+    }
+  </script>
+</body>
+</html>
