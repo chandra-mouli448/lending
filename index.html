@@ -9,7 +9,7 @@
       font-family: 'Segoe UI', 'Roboto', sans-serif;
       margin: 0;
       padding: 30px;
-      background: linear-gradient(to right, #e0eafc, #cfdef3);
+      background: linear-gradient(120deg, #e0eafc, #cfdef3);
     }
     h2 {
       text-align: center;
@@ -51,6 +51,7 @@
     #account, #verifyResult {
       margin-top: 10px;
       font-weight: bold;
+      color: #333;
     }
   </style>
 </head>
@@ -65,21 +66,21 @@
 
   <div class="section">
     <h4>Issue Credential</h4>
-    <input type="text" id="issueWorker" placeholder="Worker address" />
+    <input type="text" id="issueWorker" placeholder="Worker address (0x...)" />
     <input type="text" id="issueCredHash" placeholder="Credential hash (bytes32)" />
     <button onclick="issueCredential()">Issue Credential</button>
   </div>
 
   <div class="section">
     <h4>Revoke Credential</h4>
-    <input type="text" id="revokeWorker" placeholder="Worker address" />
+    <input type="text" id="revokeWorker" placeholder="Worker address (0x...)" />
     <input type="text" id="revokeCredHash" placeholder="Credential hash (bytes32)" />
     <button onclick="revokeCredential()">Revoke Credential</button>
   </div>
 
   <div class="section">
     <h4>Verify Credential</h4>
-    <input type="text" id="verifyWorker" placeholder="Worker address" />
+    <input type="text" id="verifyWorker" placeholder="Worker address (0x...)" />
     <input type="text" id="verifyCredHash" placeholder="Credential hash (bytes32)" />
     <button onclick="verifyCredential()">Verify Credential</button>
     <p id="verifyResult"></p>
@@ -91,7 +92,7 @@
     let signer;
     let contract;
 
-    const contractAddress = "0xD4Fc541236927E2EAf8F27606bD7309C1Fc2cbee";
+    const contractAddress = "0xD4Fc541236927E2EAf8F27606bD7309C1Fc2cbee"; // your contract address
     const contractABI = [
       {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"worker","type":"address"},{"indexed":false,"internalType":"bytes32","name":"credHash","type":"bytes32"}],"name":"CredentialIssued","type":"event"},
