@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,18 +6,15 @@
 <title>Simple Lending DApp</title>
 <style>
   body { font-family: sans-serif; padding: 20px; background: #eef; }
-  h2 { color: #333; }
-  input, button { margin: 5px 0; width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
-  button { background: #007acc; color: white; border: none; cursor: pointer; }
+  input, button { margin: 5px 0; width: 100%; padding: 8px; }
+  button { background: #007acc; color: white; border: none; }
   button:hover { background: #005fa3; }
-  #account { margin-top: 10px; font-weight: bold; }
+  #status { margin-top: 10px; font-weight: bold; }
 </style>
 </head>
 <body>
 <h2>Simple Lending DApp</h2>
-
-<button onclick="connectWallet()">Connect MetaMask</button>
-<p id="account"></p>
+<p id="status">Connecting to MetaMask...</p>
 
 <h4>Offer Loan</h4>
 <input id="loanAmount" placeholder="Loan amount in ETH" />
@@ -36,30 +32,19 @@
 <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
 <script>
 let provider, signer, contract;
-
-// ✅ Your contract address and ABI:
 const contractAddress = "0x44C2bd9BA02cc1266ebd823de9699125C2Da915C";
 const contractABI = [
-	{
-		"inputs": [{"internalType": "uint256","name": "_collateral","type": "uint256"}],
-		"name": "offerLoan","outputs": [],"stateMutability": "payable","type": "function"
-	},
-	{"inputs": [],"name": "repayLoan","outputs": [],"stateMutability": "payable","type": "function"},
-	{"inputs": [],"name": "takeLoan","outputs": [],"stateMutability": "payable","type": "function"},
-	{
-		"inputs": [],
-		"name": "loan",
-		"outputs": [
-			{"internalType": "address payable","name": "lender","type": "address"},
-			{"internalType": "address payable","name": "borrower","type": "address"},
-			{"internalType": "uint256","name": "amount","type": "uint256"},
-			{"internalType": "uint256","name": "collateral","type": "uint256"},
-			{"internalType": "bool","name": "taken","type": "bool"},
-			{"internalType": "bool","name": "repaid","type": "bool"}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
+  {"inputs":[{"internalType":"uint256","name":"_collateral","type":"uint256"}],"name":"offerLoan","outputs":[],"stateMutability":"payable","type":"function"},
+  {"inputs":[],"name":"repayLoan","outputs":[],"stateMutability":"payable","type":"function"},
+  {"inputs":[],"name":"takeLoan","outputs":[],"stateMutability":"payable","type":"function"},
+  {"inputs":[],"name":"loan","outputs":[
+    {"internalType":"address payable","name":"lender","type":"address"},
+    {"internalType":"address payable","name":"borrower","type":"address"},
+    {"internalType":"uint256","name":"amount","type":"uint256"},
+    {"internalType":"uint256","name":"collateral","type":"uint256"},
+    {"internalType":"bool","name":"taken","type":"bool"},
+    {"internalType":"bool","name":"repaid","type":"bool"}
+  ],"stateMutability":"view","type":"function"}
 ];
 
 async function connectWallet() {
@@ -70,13 +55,13 @@ async function connectWallet() {
       signer = provider.getSigner();
       contract = new ethers.Contract(contractAddress, contractABI, signer);
       const account = await signer.getAddress();
-      document.getElementById("account").innerText = "✅ Connected: " + account;
-    } catch (error) {
-      console.error(error);
-      alert("❌ Failed to connect MetaMask.");
+      document.getElementById('status').innerText = "✅ Connected: " + account;
+    } catch (err) {
+      console.error(err);
+      document.getElementById('status').innerText = "❌ Failed to connect MetaMask.";
     }
   } else {
-    alert("❗ Please install MetaMask!");
+    document.getElementById('status').innerText = "❗ Please install MetaMask!";
   }
 }
 
@@ -116,9 +101,13 @@ async function repayLoan() {
     alert("❌ Failed to repay loan.");
   }
 }
+
+// Auto-connect on page load
+window.addEventListener('load', connectWallet);
 </script>
 </body>
 </html>
+
 
 
 
