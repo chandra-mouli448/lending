@@ -13,6 +13,8 @@
 </head>
 <body>
 <h2>Simple Lending DApp</h2>
+
+<!-- ✅ Connect Wallet button -->
 <button onclick="connectWallet()">Connect MetaMask</button>
 <p id="account"></p>
 
@@ -31,7 +33,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
 <script>
-let provider, signer, contract;
+// ✅ Add your contract address & ABI here
 const contractAddress = "0xD4Fc541236927E2EAf8F27606bD7309C1Fc2cbee";
 const contractABI = [
   {
@@ -43,20 +45,8 @@ const contractABI = [
     "stateMutability": "payable",
     "type": "function"
   },
-  {
-    "inputs": [],
-    "name": "takeLoan",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "repayLoan",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
+  { "inputs": [], "name": "takeLoan", "outputs": [], "stateMutability": "payable", "type": "function" },
+  { "inputs": [], "name": "repayLoan", "outputs": [], "stateMutability": "payable", "type": "function" },
   {
     "inputs": [],
     "name": "loan",
@@ -73,16 +63,23 @@ const contractABI = [
   }
 ];
 
+let provider, signer, contract;
+
 async function connectWallet() {
   if (window.ethereum) {
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    signer = provider.getSigner();
-    contract = new ethers.Contract(contractAddress, contractABI, signer);
-    const account = await signer.getAddress();
-    document.getElementById('account').innerText = "✅ Connected: " + account;
+    try {
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      contract = new ethers.Contract(contractAddress, contractABI, signer);
+      const account = await signer.getAddress();
+      document.getElementById('account').innerText = "✅ Connected: " + account;
+    } catch (e) {
+      console.error(e);
+      alert("❌ Failed to connect MetaMask.");
+    }
   } else {
-    alert("Install MetaMask!");
+    alert("❗ Please install MetaMask!");
   }
 }
 
@@ -125,4 +122,3 @@ async function repayLoan() {
 </script>
 </body>
 </html>
-
