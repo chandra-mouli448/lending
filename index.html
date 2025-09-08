@@ -2,33 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Decentralized Lending</title>
+  <title>Loan DApp</title>
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    button { margin: 5px; padding: 10px; cursor: pointer; }
-    #walletAddress { margin-top: 10px; font-weight: bold; }
-  </style>
 </head>
 <body>
-  <h2>Decentralized Lending DApp</h2>
+  <h2>Loan DApp</h2>
 
+  <!-- Wallet -->
   <button onclick="connectWallet()">Connect Wallet</button>
   <p id="walletAddress">Not Connected</p>
 
   <hr>
 
+  <!-- Offer Loan -->
   <h3>Offer Loan</h3>
-  <input type="number" id="loanAmount" placeholder="Loan Amount in ETH">
+  <input type="number" id="loanAmount" placeholder="Loan Amount (ETH)">
   <input type="number" id="interestRate" placeholder="Interest Rate (%)">
-  <input type="text" id="docHash" placeholder="Document Hash (bytes32)">
+  <input type="text" id="docHash" placeholder="Document (any string)">
   <button onclick="offerLoan()">Offer Loan</button>
 
+  <hr>
+
+  <!-- Take Loan -->
   <h3>Take Loan</h3>
   <button onclick="takeLoan()">Take Loan</button>
 
+  <hr>
+
+  <!-- Repay Loan -->
   <h3>Repay Loan</h3>
-  <input type="number" id="repayAmount" placeholder="Repay Amount in ETH">
+  <input type="number" id="repayAmount" placeholder="Repay Amount (ETH)">
   <button onclick="repayLoan()">Repay Loan</button>
 
   <script>
@@ -37,7 +40,7 @@
     let account;
 
     const contractAddress = "0xC2e0620752E4115cA679d71Ad2c9ee63f2d046Fc";
-    const contractABI = [
+    const contractABI = [ 
       {
         "inputs":[{"internalType":"uint256","name":"_interestRate","type":"uint256"},{"internalType":"bytes32","name":"_docHash","type":"bytes32"}],
         "name":"offerLoan",
@@ -62,29 +65,31 @@
       {"inputs":[],"name":"loanTaken","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}
     ];
 
+    // Connect wallet
     async function connectWallet() {
       if (window.ethereum) {
-        try {
-          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-          account = accounts[0];
-          web3 = new Web3(window.ethereum);
-          contract = new web3.eth.Contract(contractABI, contractAddress);
-          document.getElementById("walletAddress").innerText = `Connected: ${account}`;
-        } catch (err) {
-          console.error("Wallet connection failed:", err);
-          alert("Wallet connection failed");
-        }
+        web3 = new Web3(window.ethereum);
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        account = accounts[0];
+        contract = new web3.eth.Contract(contractABI, contractAddress);
+        document.getElementById("walletAddress").innerText = "Connected: " + account;
       } else {
         alert("Please install MetaMask");
       }
     }
 
+    // Offer loan
     async function offerLoan() {
       const amount = document.getElementById("loanAmount").value;
       const rate = document.getElementById("interestRate").value;
-      const docHash = document.getElementById("docHash").value;
+      const docHashInput = document.getElementById("docHash").value;
 
-      if (!amount || !rate || !docHash) return alert("Please fill all fields");
+      if (!amount || !rate || !docHashInput) {
+        return alert("Please enter all fields");
+      }
+
+      // Convert string to bytes32
+      const docHash = web3.utils.asciiToHex(docHashInput);
 
       try {
         await contract.methods.offerLoan(rate, docHash).send({
@@ -98,6 +103,7 @@
       }
     }
 
+    // Take loan
     async function takeLoan() {
       try {
         await contract.methods.takeLoan().send({ from: account });
@@ -108,6 +114,7 @@
       }
     }
 
+    // Repay loan
     async function repayLoan() {
       const repayAmount = document.getElementById("repayAmount").value;
       if (!repayAmount) return alert("Enter repay amount");
@@ -122,17 +129,6 @@
         console.error(err);
         alert("Repay loan failed");
       }
-    }
-
-    // Auto-update if account/chain changes
-    if (window.ethereum) {
-      window.ethereum.on("accountsChanged", (accounts) => {
-        account = accounts[0];
-        document.getElementById("walletAddress").innerText = `Connected: ${account}`;
-      });
-      window.ethereum.on("chainChanged", () => {
-        window.location.reload();
-      });
     }
   </script>
 </body>
