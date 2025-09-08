@@ -2,118 +2,129 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>P2P Lending DApp</title>
+  <title>Decentralized Lending</title>
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
-    .toastBox { position: fixed; top: 20px; right: 20px; z-index: 1000; }
-    .toast { margin: 5px; padding: 10px 15px; color: #fff; border-radius: 8px; }
-    button { padding: 8px 12px; margin: 5px; cursor: pointer; }
+    button { margin: 5px; padding: 10px; cursor: pointer; }
+    #walletAddress { margin-top: 10px; font-weight: bold; }
   </style>
 </head>
 <body>
+  <h2>Decentralized Lending DApp</h2>
 
-  <h1>Decentralized P2P Lending</h1>
-
-  <!-- Wallet -->
   <button onclick="connectWallet()">Connect Wallet</button>
   <p id="walletAddress">Not Connected</p>
 
-  <!-- Loan Offer -->
-  <h2>Lender</h2>
-  <input type="number" id="interestRate" placeholder="Interest Rate (%)"><br>
-  <input type="number" id="loanAmount" placeholder="Loan Amount (ETH)"><br>
-  <input type="file" id="lenderDoc"><br>
+  <hr>
+
+  <h3>Offer Loan</h3>
+  <input type="number" id="loanAmount" placeholder="Loan Amount in ETH">
+  <input type="number" id="interestRate" placeholder="Interest Rate (%)">
+  <input type="text" id="docHash" placeholder="Document Hash (bytes32)">
   <button onclick="offerLoan()">Offer Loan</button>
 
-  <!-- Borrower -->
-  <h2>Borrower</h2>
-  <input type="file" id="borrowerDoc"><br>
-  <button onclick="submitDocument()">Submit Document</button>
+  <h3>Take Loan</h3>
   <button onclick="takeLoan()">Take Loan</button>
 
-  <!-- Repay -->
-  <h2>Repay Loan</h2>
-  <button onclick="repayLoan()">Repay</button>
-  <p id="repayStatus"></p>
-  <button onclick="resetLoanManually()">Manual Reset</button>
-
-  <!-- Toasts -->
-  <div id="toastBox" class="toastBox"></div>
+  <h3>Repay Loan</h3>
+  <input type="number" id="repayAmount" placeholder="Repay Amount in ETH">
+  <button onclick="repayLoan()">Repay Loan</button>
 
   <script>
     let web3;
+    let contract;
     let account;
-    const contractAddress = "0xC2e0620752E4115cA679d71Ad2c9ee63f2d046Fc"; // ✅ your deployed contract
 
-    const contractABI = [/* your full ABI pasted here */ 
+    const contractAddress = "0xC2e0620752E4115cA679d71Ad2c9ee63f2d046Fc";
+    const contractABI = [
       {
-        "inputs": [
-          { "internalType": "uint256", "name": "_interestRate", "type": "uint256" },
-          { "internalType": "bytes32", "name": "_docHash", "type": "bytes32" }
-        ],
-        "name": "offerLoan",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
+        "inputs":[{"internalType":"uint256","name":"_interestRate","type":"uint256"},{"internalType":"bytes32","name":"_docHash","type":"bytes32"}],
+        "name":"offerLoan",
+        "outputs":[],
+        "stateMutability":"payable",
+        "type":"function"
       },
-      { "inputs": [], "name": "repayLoan", "outputs": [], "stateMutability": "payable", "type": "function" },
-      { "inputs": [], "name": "resetLoan", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-      {
-        "inputs": [{ "internalType": "bytes32", "name": "_userDocHash", "type": "bytes32" }],
-        "name": "submitDocument",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      { "inputs": [], "name": "takeLoan", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-      { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
-      { "inputs": [], "name": "borrower", "outputs": [{ "internalType": "address payable", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-      { "inputs": [], "name": "docSubmitted", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
-      { "inputs": [], "name": "documentHash", "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }], "stateMutability": "view", "type": "function" },
-      { "inputs": [], "name": "interestRate", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-      { "inputs": [], "name": "lender", "outputs": [{ "internalType": "address payable", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-      { "inputs": [], "name": "loanAmount", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-      { "inputs": [], "name": "loanOffered", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
-      { "inputs": [], "name": "loanRepaid", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
-      { "inputs": [], "name": "loanStartTime", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-      { "inputs": [], "name": "loanTaken", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" }
+      {"inputs":[],"name":"repayLoan","outputs":[],"stateMutability":"payable","type":"function"},
+      {"inputs":[],"name":"resetLoan","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"bytes32","name":"_userDocHash","type":"bytes32"}],"name":"submitDocument","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"takeLoan","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
+      {"inputs":[],"name":"borrower","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"docSubmitted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"documentHash","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"interestRate","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"lender","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"loanAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"loanOffered","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"loanRepaid","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"loanStartTime","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"loanTaken","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}
     ];
 
-    let contract;
-
-    // Toast
-    function showToast(message, type = "info") {
-      const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.innerText = message;
-      if (type === "error") toast.style.backgroundColor = "#dc3545";
-      if (type === "success") toast.style.backgroundColor = "#28a745";
-      if (type === "info") toast.style.backgroundColor = "#007bff";
-      document.getElementById("toastBox").appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
-    // Connect Wallet
     async function connectWallet() {
       if (window.ethereum) {
         try {
-          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
           account = accounts[0];
           web3 = new Web3(window.ethereum);
           contract = new web3.eth.Contract(contractABI, contractAddress);
           document.getElementById("walletAddress").innerText = `Connected: ${account}`;
-          showToast("✅ Wallet connected", "success");
-        } catch (error) {
-          console.error("Connection error:", error);
-          showToast("❌ Wallet connection failed", "error");
+        } catch (err) {
+          console.error("Wallet connection failed:", err);
+          alert("Wallet connection failed");
         }
       } else {
-        showToast("❌ Please install MetaMask", "error");
+        alert("Please install MetaMask");
       }
     }
 
-    // Auto detect account/chain change
+    async function offerLoan() {
+      const amount = document.getElementById("loanAmount").value;
+      const rate = document.getElementById("interestRate").value;
+      const docHash = document.getElementById("docHash").value;
+
+      if (!amount || !rate || !docHash) return alert("Please fill all fields");
+
+      try {
+        await contract.methods.offerLoan(rate, docHash).send({
+          from: account,
+          value: web3.utils.toWei(amount, "ether")
+        });
+        alert("Loan offered successfully");
+      } catch (err) {
+        console.error(err);
+        alert("Offer loan failed");
+      }
+    }
+
+    async function takeLoan() {
+      try {
+        await contract.methods.takeLoan().send({ from: account });
+        alert("Loan taken successfully");
+      } catch (err) {
+        console.error(err);
+        alert("Take loan failed");
+      }
+    }
+
+    async function repayLoan() {
+      const repayAmount = document.getElementById("repayAmount").value;
+      if (!repayAmount) return alert("Enter repay amount");
+
+      try {
+        await contract.methods.repayLoan().send({
+          from: account,
+          value: web3.utils.toWei(repayAmount, "ether")
+        });
+        alert("Loan repaid successfully");
+      } catch (err) {
+        console.error(err);
+        alert("Repay loan failed");
+      }
+    }
+
+    // Auto-update if account/chain changes
     if (window.ethereum) {
       window.ethereum.on("accountsChanged", (accounts) => {
         account = accounts[0];
@@ -121,100 +132,6 @@
       });
       window.ethereum.on("chainChanged", () => {
         window.location.reload();
-      });
-    }
-
-    // Offer Loan
-    async function offerLoan() {
-      const rate = document.getElementById("interestRate").value;
-      const amount = document.getElementById("loanAmount").value;
-      const file = document.getElementById("lenderDoc").files[0];
-      if (!file) return showToast("Upload document", "error");
-      const hash = await getFileHash(file);
-      try {
-        await contract.methods.offerLoan(rate, hash).send({ from: account, value: web3.utils.toWei(amount, 'ether') });
-        showToast("Loan offered successfully", "success");
-      } catch (err) {
-        console.error(err);
-        showToast("Loan offer failed", "error");
-      }
-    }
-
-    // Submit Borrower Document
-    async function submitDocument() {
-      const file = document.getElementById("borrowerDoc").files[0];
-      if (!file) return showToast("Upload borrower document", "error");
-      const hash = await getFileHash(file);
-      try {
-        await contract.methods.submitDocument(hash).send({ from: account });
-        showToast("Document submitted", "success");
-      } catch (err) {
-        console.error(err);
-        showToast("Document submission failed", "error");
-      }
-    }
-
-    // Take Loan
-    async function takeLoan() {
-      try {
-        await contract.methods.takeLoan().send({ from: account });
-        showToast("Loan taken successfully", "success");
-      } catch (err) {
-        console.error(err);
-        showToast("Loan taking failed", "error");
-      }
-    }
-
-    // Repay Loan (auto-calculates)
-    async function repayLoan() {
-      try {
-        const loanAmount = await contract.methods.loanAmount().call();
-        const interestRate = await contract.methods.interestRate().call();
-
-        const interest = (loanAmount * interestRate) / 100;
-        const repayValue = BigInt(loanAmount) + BigInt(interest);
-
-        await contract.methods.repayLoan().send({ from: account, value: repayValue.toString() });
-
-        document.getElementById("repayStatus").innerText = "✅ Repayment successful";
-        showToast("Loan repaid", "success");
-      } catch (err) {
-        console.error("Repay failed:", err);
-        document.getElementById("repayStatus").innerText = "❌ Repayment failed";
-        showToast("Repayment failed", "error");
-      }
-    }
-
-    // Reset Loan
-    async function resetLoanManually() {
-      try {
-        await contract.methods.resetLoan().send({ from: account });
-        document.getElementById("repayStatus").innerText = "Loan reset";
-        showToast("Loan reset", "success");
-      } catch (err) {
-        console.error(err);
-        showToast("Reset failed", "error");
-      }
-    }
-
-    // File Hash (SHA-256 → bytes32)
-    async function getFileHash(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = async () => {
-          try {
-            const buffer = reader.result;
-            const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = "0x" + hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-            const hash32 = hashHex.slice(0, 66); // first 32 bytes
-            resolve(hash32);
-          } catch (err) {
-            reject(err);
-          }
-        };
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(file);
       });
     }
   </script>
