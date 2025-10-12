@@ -1,162 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>P2P Lending DApp</title>
-  <script src="https://unpkg.com/web3@1.10.0/dist/web3.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Peer to Peer Lending</title>
+
+  <!-- ✅ Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+
+  <!-- ✅ Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
-    body { background:#222; color:white; font-family:sans-serif; padding:20px; }
-    .container { max-width:500px; margin:auto; background:#333; padding:20px; border-radius:10px; }
-    input,button { margin-top:10px; }
-    .panel { display:none; }
-    .panel.show { display:block; }
+    body {
+      font-family: 'Poppins', sans-serif;
+    }
   </style>
 </head>
-<body>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-6">
 
-<div class="container">
-  <h2 class="text-center mb-4">💸 P2P Lending DApp</h2>
+  <!-- Header -->
+  <h1 class="text-3xl font-bold mb-6">💰 Decentralized Lending Platform</h1>
 
-  <button class="btn btn-primary w-100" onclick="connectWallet()">🔗 Connect Wallet</button>
-  <p id="walletAddress" class="mt-2"></p>
-
-  <div class="mt-3 text-center">
-    <button class="btn btn-success me-2" onclick="showPanel('lender')">Lender Panel</button>
-    <button class="btn btn-warning" onclick="showPanel('borrower')">Borrower Panel</button>
+  <!-- Wallet Connect Section -->
+  <div class="mb-8">
+    <button 
+      id="connectButton" 
+      class="px-6 py-3 bg-blue-600 rounded-xl hover:bg-blue-700 transition"
+    >
+      Connect Wallet
+    </button>
+    <p id="walletAddress" class="mt-4 text-lg"></p>
   </div>
 
   <!-- Lender Panel -->
-  <div class="panel" id="lenderPanel">
-    <h5 class="mt-4">💰 Lender Panel</h5>
-    <input id="interestRate" class="form-control" placeholder="Interest Rate (%)">
-    <input id="loanAmount" class="form-control" placeholder="Loan Amount (ETH)">
-    <input type="file" id="lenderDoc" class="form-control">
-    <button class="btn btn-success w-100" onclick="offerLoan()">Offer Loan</button>
+  <div class="bg-gray-800 p-6 rounded-2xl shadow-lg w-full max-w-md">
+    <h2 class="text-2xl font-semibold mb-4">Lender Panel</h2>
+    <input 
+      id="interestRate" 
+      type="number" 
+      class="w-full p-2 mb-3 rounded text-black" 
+      placeholder="Interest Rate (%)"
+    >
+    <input 
+      id="loanAmount" 
+      type="number" 
+      class="w-full p-2 mb-3 rounded text-black" 
+      placeholder="Loan Amount (in ETH)"
+    >
+    <input 
+      id="lenderDoc" 
+      type="file" 
+      class="w-full p-2 mb-4 rounded bg-white text-black"
+    >
+    <button 
+      onclick="offerLoan()" 
+      class="w-full bg-green-600 hover:bg-green-700 p-3 rounded-xl font-semibold"
+    >
+      Offer Loan
+    </button>
+    <p id="loanStatus" class="mt-4 text-yellow-400"></p>
   </div>
 
-  <!-- Borrower Panel -->
-  <div class="panel" id="borrowerPanel">
-    <h5 class="mt-4">🤝 Borrower Panel</h5>
-    <input type="file" id="borrowerDoc" class="form-control">
-    <button class="btn btn-info w-100 mt-2" onclick="submitDocument()">Submit Document</button>
-    <button class="btn btn-warning w-100 mt-2" onclick="takeLoan()">Take Loan</button>
-    <button class="btn btn-success w-100 mt-2" onclick="repayLoan()">Repay Loan</button>
-    <p id="repayStatus" class="mt-2"></p>
-  </div>
-</div>
+  <script>
+    const connectButton = document.getElementById('connectButton');
+    const walletAddress = document.getElementById('walletAddress');
+    const loanStatus = document.getElementById('loanStatus');
 
-<script>
-let web3;
-let account;
-let contract;
+    // ✅ Connect Wallet
+    async function connectWallet() {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          walletAddress.textContent = `✅ Connected: ${accounts[0]}`;
+        } catch (error) {
+          console.error(error);
+          walletAddress.textContent = '❌ Connection failed';
+        }
+      } else {
+        walletAddress.textContent = '⚠️ MetaMask not found';
+      }
+    }
 
-// ⚠️ Replace this with your actual contract
-const contractAddress = "YOUR_CONTRACT_ADDRESS_HERE";
-const contractABI = YOUR_CONTRACT_ABI_HERE;
+    connectButton.addEventListener('click', connectWallet);
 
-function showPanel(type){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));
-  document.getElementById(type+'Panel').classList.add('show');
-}
+    // ✅ Offer Loan Function
+    function offerLoan() {
+      const interestRate = document.getElementById('interestRate').value;
+      const loanAmount = document.getElementById('loanAmount').value;
+      const lenderDoc = document.getElementById('lenderDoc').files[0];
 
-async function connectWallet(){
-  if(window.ethereum){
-    await window.ethereum.request({ method:'eth_requestAccounts' });
-    web3 = new Web3(window.ethereum);
-    const accounts = await web3.eth.getAccounts();
-    account = accounts[0];
-    contract = new web3.eth.Contract(contractABI, contractAddress);
-    document.getElementById('walletAddress').innerText = "✅ Connected: " + account;
-    alert("Wallet connected");
-  } else {
-    alert("MetaMask not installed!");
-  }
-}
+      if (!window.ethereum || !walletAddress.textContent.includes('Connected')) {
+        loanStatus.textContent = '❌ Please connect your wallet first.';
+        return;
+      }
 
-async function getFileHash(file){
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const arrayBuffer = reader.result;
-      const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = '0x'+hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
-      resolve(hashHex);
-    };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
-}
+      if (!interestRate || !loanAmount || !lenderDoc) {
+        loanStatus.textContent = '⚠️ Please fill all fields and upload document.';
+        return;
+      }
 
-async function offerLoan(){
-  const rate = document.getElementById('interestRate').value;
-  const amount = document.getElementById('loanAmount').value;
-  const file = document.getElementById('lenderDoc').files[0];
-
-  if(!file){ alert("Upload document"); return; }
-
-  const hash = await getFileHash(file);
-  try {
-    await contract.methods.offerLoan(rate, hash).send({
-      from: account,
-      value: web3.utils.toWei(amount, 'ether'),
-      gas: 300000
-    });
-    alert("✅ Loan Offered Successfully");
-  } catch (e) {
-    alert("❌ Transaction Failed:\n" + (e.message || "Unknown error"));
-  }
-}
-
-async function submitDocument(){
-  const file = document.getElementById('borrowerDoc').files[0];
-  if(!file){ alert("Upload document"); return; }
-
-  const hash = await getFileHash(file);
-  try{
-    await contract.methods.submitDocument(hash).send({from:account});
-    alert("📄 Document Submitted");
-  }catch(e){
-    alert("❌ Failed:\n" + (e.message || "Unknown error"));
-  }
-}
-
-async function takeLoan(){
-  try{
-    await contract.methods.takeLoan().send({from:account, gas:300000});
-    alert("💰 Loan Taken Successfully");
-  }catch(e){
-    alert("❌ Failed:\n" + (e.message || "Unknown error"));
-  }
-}
-
-async function repayLoan(){
-  try{
-    const loanAmount = await contract.methods.loanAmount().call();
-    const interestRate = await contract.methods.interestRate().call();
-    const startTime = await contract.methods.loanStartTime().call();
-
-    const now = Math.floor(Date.now()/1000);
-    const months = Math.floor((now - startTime) / (30*24*3600));
-    const interest = BigInt(loanAmount) * BigInt(interestRate) * BigInt(months+1) / 100n;
-    const totalDue = BigInt(loanAmount) + interest;
-
-    await contract.methods.repayLoan().send({
-      from: account,
-      value: totalDue.toString(),
-      gas: 300000
-    });
-
-    document.getElementById('repayStatus').innerText = "✅ Repayment done!";
-    alert("✅ Loan Repaid");
-  }catch(e){
-    alert("❌ Failed:\n" + (e.message || "Unknown error"));
-  }
-}
-</script>
-
+      // You can add blockchain smart contract call here later
+      loanStatus.textContent = `✅ Loan offer created successfully!
+      Interest: ${interestRate}% | Amount: ${loanAmount} ETH`;
+    }
+  </script>
 </body>
 </html>
