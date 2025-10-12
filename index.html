@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lender Panel - Sepolia ETH</title>
-  <!-- Use ethers v5 for browser -->
+  <title>Lender Panel - Sepolia</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 </head>
@@ -13,15 +12,12 @@
 <div class="container">
   <h2 class="mb-4">💰 Lender Panel (Sepolia ETH)</h2>
 
-  <div class="mb-3">
-    <button id="connectWalletBtn" class="btn btn-primary w-100">Connect Wallet</button>
-  </div>
+  <button id="connectWalletBtn" class="btn btn-primary w-100 mb-3">Connect Wallet</button>
 
-  <div class="panel show" id="lenderPanel" style="display: none;">
+  <div id="lenderPanel" style="display: none;">
     <input id="borrowerAddress" class="form-control mb-2" placeholder="Borrower Address">
     <input id="loanAmount" class="form-control mb-2" placeholder="Loan Amount (in ETH)">
-    <input id="interestRate" class="form-control mb-2" placeholder="Interest Rate (%)">
-    <button class="btn btn-success w-100" id="offerLoanBtn">Offer Loan</button>
+    <button id="offerLoanBtn" class="btn btn-success w-100">Offer Loan</button>
     <div id="status" class="mt-3"></div>
   </div>
 </div>
@@ -35,28 +31,44 @@ const lenderPanel = document.getElementById('lenderPanel');
 const offerLoanBtn = document.getElementById('offerLoanBtn');
 const statusDiv = document.getElementById('status');
 
-connectWalletBtn.onclick = async () => {
-  if (!window.ethereum) {
-    alert("Please install MetaMask!");
+async function connectWallet() {
+  if (typeof window.ethereum === 'undefined') {
+    alert("MetaMask is not installed!");
     return;
   }
+
   try {
-    await window.ethereum.request({ method: 'eth_requestAccounts' });
+    // Request account access
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     provider = new ethers.providers.Web3Provider(window.ethereum);
     signer = provider.getSigner();
     const address = await signer.getAddress();
+
     connectWalletBtn.innerText = `Wallet Connected: ${address.slice(0,6)}...${address.slice(-4)}`;
+    connectWalletBtn.disabled = true;
     lenderPanel.style.display = 'block';
+
+    // Optional: listen for account changes
+    window.ethereum.on('accountsChanged', (accounts) => {
+      if (accounts.length === 0) {
+        connectWalletBtn.innerText = "Connect Wallet";
+        connectWalletBtn.disabled = false;
+        lenderPanel.style.display = 'none';
+      } else {
+        connectWalletBtn.innerText = `Wallet Connected: ${accounts[0].slice(0,6)}...${accounts[0].slice(-4)}`;
+      }
+    });
+
   } catch (err) {
     statusDiv.innerHTML = `<span class="text-danger">Connection failed: ${err.message}</span>`;
   }
-};
+}
 
-offerLoanBtn.onclick = async () => {
+async function offerLoan() {
   const borrower = document.getElementById('borrowerAddress').value;
   const amount = document.getElementById('loanAmount').value;
 
-  if (!borrower || !ethers.utils.isAddress(borrower)) {
+  if (!ethers.utils.isAddress(borrower)) {
     statusDiv.innerHTML = '<span class="text-danger">Invalid borrower address</span>';
     return;
   }
@@ -77,7 +89,10 @@ offerLoanBtn.onclick = async () => {
   } catch (err) {
     statusDiv.innerHTML = `<span class="text-danger">Transaction failed: ${err.message}</span>`;
   }
-};
+}
+
+connectWalletBtn.addEventListener('click', connectWallet);
+offerLoanBtn.addEventListener('click', offerLoan);
 </script>
 
 </body>
