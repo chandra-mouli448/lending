@@ -3,93 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document-Backed Lending DApp</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>P2P Lending DApp</title>
   <script src="https://unpkg.com/web3@1.10.0/dist/web3.min.js"></script>
-  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-    .container {
-      max-width: 600px;
-      margin-top: 50px;
-      background: rgba(0,0,0,0.4);
-      padding: 20px;
-      border-radius: 20px;
-    }
-    .panel { display:none; margin-top:20px; }
+    body { background:#222; color:white; font-family:sans-serif; padding:20px; }
+    .container { max-width:500px; margin:auto; background:#333; padding:20px; border-radius:10px; }
+    input,button { margin-top:10px; }
+    .panel { display:none; }
     .panel.show { display:block; }
-    .form-control { margin-bottom:10px; }
-    .toast { position: fixed; bottom: 20px; right: 20px; background: #28a745; padding:10px; border-radius:10px; color:white; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h2 class="text-center mb-4">📜 Document-Backed Lending DApp</h2>
+  <h2 class="text-center mb-4">💸 P2P Lending DApp</h2>
 
-  <lottie-player src="https://assets5.lottiefiles.com/packages/lf20_ydo1amjm.json" 
-                 background="transparent" speed="1" style="width: 100px; margin: 0 auto;" loop autoplay>
-  </lottie-player>
+  <button class="btn btn-primary w-100" onclick="connectWallet()">🔗 Connect Wallet</button>
+  <p id="walletAddress" class="mt-2"></p>
 
-  <div class="text-center mt-3">
-    <button class="btn btn-primary" onclick="connectWallet()">Connect Wallet</button>
-    <p id="walletAddress" style="margin-top:10px;"></p>
-  </div>
-
-  <div class="text-center mt-4">
-    <button class="btn btn-success" onclick="showPanel('lender')">Offer Loan</button>
-    <button class="btn btn-warning" onclick="showPanel('borrower')">Borrow Loan</button>
+  <div class="mt-3 text-center">
+    <button class="btn btn-success me-2" onclick="showPanel('lender')">Lender Panel</button>
+    <button class="btn btn-warning" onclick="showPanel('borrower')">Borrower Panel</button>
   </div>
 
   <!-- Lender Panel -->
   <div class="panel" id="lenderPanel">
-    <h5>Lender Panel</h5>
-    <input type="number" id="interestRate" class="form-control" placeholder="Interest Rate (%)">
-    <input type="number" id="loanAmount" class="form-control" placeholder="Loan Amount (ETH)">
+    <h5 class="mt-4">💰 Lender Panel</h5>
+    <input id="interestRate" class="form-control" placeholder="Interest Rate (%)">
+    <input id="loanAmount" class="form-control" placeholder="Loan Amount (ETH)">
     <input type="file" id="lenderDoc" class="form-control">
     <button class="btn btn-success w-100" onclick="offerLoan()">Offer Loan</button>
-    <button class="btn btn-danger w-100 mt-2" onclick="resetLoanManually()">Reset Loan</button>
   </div>
 
   <!-- Borrower Panel -->
   <div class="panel" id="borrowerPanel">
-    <h5>Borrower Panel</h5>
+    <h5 class="mt-4">🤝 Borrower Panel</h5>
     <input type="file" id="borrowerDoc" class="form-control">
-    <button class="btn btn-warning w-100 mt-2" onclick="submitDocument()">Submit Document</button>
-    <button class="btn btn-primary w-100 mt-2" onclick="takeLoan()">Take Loan</button>
+    <button class="btn btn-info w-100 mt-2" onclick="submitDocument()">Submit Document</button>
+    <button class="btn btn-warning w-100 mt-2" onclick="takeLoan()">Take Loan</button>
     <button class="btn btn-success w-100 mt-2" onclick="repayLoan()">Repay Loan</button>
-    <p id="repayStatus" style="margin-top:10px;"></p>
+    <p id="repayStatus" class="mt-2"></p>
   </div>
 </div>
 
-<div id="toastBox"></div>
-
 <script>
-let web3, account, contract;
-const contractAddress = "0x1616bb92cD87643f3FCEfa1468C10Da5c3840f44";
-const contractABI = [...YOUR_CONTRACT_ABI_HERE...]; // Use your ABI
+let web3;
+let account;
+let contract;
 
-function showPanel(type) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
+// ⚠️ Replace this with your actual contract
+const contractAddress = "YOUR_CONTRACT_ADDRESS_HERE";
+const contractABI = YOUR_CONTRACT_ABI_HERE;
+
+function showPanel(type){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));
   document.getElementById(type+'Panel').classList.add('show');
 }
 
-async function connectWallet() {
+async function connectWallet(){
   if(window.ethereum){
     await window.ethereum.request({ method:'eth_requestAccounts' });
     web3 = new Web3(window.ethereum);
     const accounts = await web3.eth.getAccounts();
     account = accounts[0];
     contract = new web3.eth.Contract(contractABI, contractAddress);
-    document.getElementById('walletAddress').innerText = "Connected: " + account;
-    showToast("Wallet connected!");
+    document.getElementById('walletAddress').innerText = "✅ Connected: " + account;
+    alert("Wallet connected");
   } else {
     alert("MetaMask not installed!");
   }
@@ -114,65 +95,66 @@ async function offerLoan(){
   const rate = document.getElementById('interestRate').value;
   const amount = document.getElementById('loanAmount').value;
   const file = document.getElementById('lenderDoc').files[0];
-  if(!file) return alert("Upload a document");
+
+  if(!file){ alert("Upload document"); return; }
+
   const hash = await getFileHash(file);
-  try{
-    await contract.methods.offerLoan(rate, hash).send({ from: account, value: web3.utils.toWei(amount,'ether') });
-    showToast("Loan offered!");
-  }catch(e){
-    console.error(e); showToast("Failed to offer loan","error");
+  try {
+    await contract.methods.offerLoan(rate, hash).send({
+      from: account,
+      value: web3.utils.toWei(amount, 'ether'),
+      gas: 300000
+    });
+    alert("✅ Loan Offered Successfully");
+  } catch (e) {
+    alert("❌ Transaction Failed:\n" + (e.message || "Unknown error"));
   }
 }
 
 async function submitDocument(){
   const file = document.getElementById('borrowerDoc').files[0];
-  if(!file) return alert("Upload document");
+  if(!file){ alert("Upload document"); return; }
+
   const hash = await getFileHash(file);
   try{
     await contract.methods.submitDocument(hash).send({from:account});
-    showToast("Document submitted!");
-  }catch(e){ console.error(e); showToast("Failed","error"); }
+    alert("📄 Document Submitted");
+  }catch(e){
+    alert("❌ Failed:\n" + (e.message || "Unknown error"));
+  }
 }
 
 async function takeLoan(){
   try{
-    await contract.methods.takeLoan().send({from:account});
-    showToast("Loan taken!");
-  }catch(e){ console.error(e); showToast("Failed","error"); }
+    await contract.methods.takeLoan().send({from:account, gas:300000});
+    alert("💰 Loan Taken Successfully");
+  }catch(e){
+    alert("❌ Failed:\n" + (e.message || "Unknown error"));
+  }
 }
 
 async function repayLoan(){
   try{
-    const [loanAmount, interestRate, startTime, lenderAddress] = await Promise.all([
-      contract.methods.loanAmount().call(),
-      contract.methods.interestRate().call(),
-      contract.methods.loanStartTime().call(),
-      contract.methods.lender().call()
-    ]);
+    const loanAmount = await contract.methods.loanAmount().call();
+    const interestRate = await contract.methods.interestRate().call();
+    const startTime = await contract.methods.loanStartTime().call();
+
     const now = Math.floor(Date.now()/1000);
-    const months = Math.floor((now - startTime)/(30*24*3600));
-    const interest = BigInt(loanAmount) * BigInt(interestRate) * BigInt(months+1)/100n;
+    const months = Math.floor((now - startTime) / (30*24*3600));
+    const interest = BigInt(loanAmount) * BigInt(interestRate) * BigInt(months+1) / 100n;
     const totalDue = BigInt(loanAmount) + interest;
-    await contract.methods.repayLoan().send({from:account, value:totalDue.toString()});
-    document.getElementById('repayStatus').innerText = "Repayment successful!";
-    showToast("Repayment successful!");
-  }catch(e){ console.error(e); showToast("Failed","error"); }
-}
 
-async function resetLoanManually(){
-  try{
-    await contract.methods.resetLoan().send({from:account});
-    showToast("Loan reset!");
-  }catch(e){ console.error(e); showToast("Failed reset","error"); }
-}
+    await contract.methods.repayLoan().send({
+      from: account,
+      value: totalDue.toString(),
+      gas: 300000
+    });
 
-function showToast(msg, type="success"){
-  const toast = document.createElement('div');
-  toast.className='toast';
-  toast.style.backgroundColor = type==='error'? '#dc3545':'#28a745';
-  toast.innerText = msg;
-  document.getElementById('toastBox').appendChild(toast);
-  setTimeout(()=>toast.remove(),3000);
+    document.getElementById('repayStatus').innerText = "✅ Repayment done!";
+    alert("✅ Loan Repaid");
+  }catch(e){
+    alert("❌ Failed:\n" + (e.message || "Unknown error"));
+  }
 }
 </script>
 
